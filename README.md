@@ -154,5 +154,5 @@ Test (watch the console / dmesg while pressing buttons):
   the kernel. If spi(4) is modular on some machine, load the spi module
   first (or add "spi" to the MODULE() dependency list).
 
-## Verified on real hardware: Raspberry Pi 3 B "netbsdrpi" (NetBSD 11.1, evbarm)
+## Verified on real hardware: Raspberry Pi 3 B (NetBSD 11.1, evbarm)
 
