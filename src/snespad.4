@@ -1,0 +1,97 @@
+.\"\t$NetBSD$
+.Dd November 15, 2026
+.Dt SNESPAD 4
+.Os
+.Sh NAME
+.Nm snespad
+.Nd SNES gamepad driver for spi(4) buses
+.Sh SYNOPSIS
+.Cd "snespad* at spi? slave ?"
+.Cd "wskbd* at wskbddev? mux 1"
+.Pp
+In a kernel configuration file:
+.Bd -literal -offset indent
+.Cd "snespad* at spi? slave 0"
+.Cd "snespad* at spi? slave 1"
+.Cd "wskbd* at wskbddev? mux 1"
+.Ed
+.Pp
+The driver is also available as a loadable module
+.Pq Pa snespad.kmod .
+.Sh DESCRIPTION
+The
+.Nm
+driver supports original SNES gamepads connected to a
+.Xr spi 4
+bus.  The pad's Latch line is wired to a chip select (slave) of the bus,
+Clock to SCLK, Data to MISO, and the pad is powered from +5V.
+This is the wiring of the
+.Lk https://github.com/thgrass/SNES-Gamepads-to-SPI-Adaptor "SNES-Gamepads-to-SPI-Adaptor"
+board (two pads on one bus, one per chip select, using per-socket
+tri-state buffers on the shared MISO line), or a single pad wired
+directly to any SPI port without any extra chip.
+.Pp
+On attach, and then at about 60 Hz from a kernel thread, the driver
+asserts the slave's chip select and clocks out 16 SPI mode-0 bits,
+MSB first, at 500 kHz.  The pad reports its 12 buttons active-low in the
+order B, Y, Select, Start, Up, Down, Left, Right, A, X, L, R, followed by
+four one-bits; an idle pad therefore reads raw 0xffff.  A pad is only
+trusted when the trailing four bits are ones
+.Pq raw & 0xf == 0xf ;
+an empty socket (floating data line) is reported as "no buttons" so it
+cannot generate phantom events.
+.Pp
+Up to four pads are supported (one per chip select,
+.Cd "snespad* at spi? slave N" ,
+N = 0..3; the default module config enables N = 0 and 1, the driver's
+.Dv SNESPAD_MAX_PORTS
+compile-time knob defaults to 4).  Each attached pad is exposed as a
+.Xr wskbd 4
+keyboard so wscons/X11 applications and emulators see it as a plain
+keyboard.  To keep several pads on the same keyboard distinguishable,
+each port maps its buttons to a different key set:
+.Bl -tag -width "port 3" -compact
+.It port 0 (slave 0)
+D-pad = arrow keys, A=a, B=b, X=x, Y=y, L=l, R=r, Start=Return, Select=Space
+.It port 1 (slave 1)
+numeric keypad (D-pad = KP 8/2/4/6, A=KP 1, B=KP 3, X=KP 9, Y=KP 7,
+Start=KP Enter, Select=KP 0, L=KP -, R=KP +)
+.It port 2 (slave 2)
+F1..F12
+.It port 3 (slave 3)
+keys c, d, e, f, g, h, i, j, k, m, n, o
+.El
+.Pp
+The wskbd child requires
+.Cd "wskbd* at wskbddev? mux 1"
+in the kernel configuration (this is the standard attribute-based
+attach; the driver provides the
+.Dv wskbddev
+attribute).
+.Pp
+Debug output is available via
+.Bd -literal -offset indent
+# sysctl -w hw.snespad_debug=1    # log button changes
+# sysctl -w hw.snespad_debug=2    # log every sample
+.Ed
+.Pp
+and appears in
+.Xr dmesg 8 .
+.Sh SEE ALSO
+.Xr spi 4 ,
+.Xr wskbd 4 ,
+.Xr modload 8 ,
+.Xr MAKEDEV 8
+.Sh HISTORY
+The
+.Nm
+driver first appeared in
+.Nx 11.1 .
+It attaches to any
+.Xr spi 4
+bus via
+.Cd "snespad* at spi? slave N" .
+When loaded at runtime on a stock
+.Xr spi 4
+(bus without ca_rescan), the spi(4) rescan fix is required for the
+attach to happen; built into the kernel config directly, no extra patch is needed.

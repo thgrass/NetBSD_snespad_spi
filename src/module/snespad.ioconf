@@ -1,0 +1,24 @@
+#	$NetBSD$
+
+# snespad module for machines with a spi(4) bus: the slave number is
+# the chip-select index on that bus (e.g. on the  Raspberry Pi 3 header
+# CE0 = slave 0,# CE1 = slave 1).
+#
+# These instances are attached by the rescan that config_init_component()
+# triggers on every attached bus implementing ca_rescan - stock spi(4)
+# needs patches/03-spi-rescan.diff for this (or build the driver into the
+# kernel config with "snespad* at spi? slave N" instead, then no patch is 
+# required).
+
+ioconf	snespad
+
+include	"conf/files"
+
+pseudo-root	spi*
+
+# default: two pads (two chip selects).  Enable more for buses with more
+# CS lines (up to 4; SNESPAD_MAX_PORTS in snespad.c must cover them):
+snespad0	at spi? slave 0
+snespad1	at spi? slave 1
+#snespad2	at spi? slave 2
+#snespad3	at spi? slave 3

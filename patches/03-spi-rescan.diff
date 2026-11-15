@@ -1,0 +1,36 @@
+--- a/sys/dev/spi/spi.c
++++ b/sys/dev/spi/spi.c
+@@ -329,6 +329,22 @@
+ 	    CFARGS(.search = spi_search));
+ }
+ 
++/*
++ * Rescan for children, e.g. when a driver module with "at spi?"
++ * cfdata is loaded at runtime (config_cfdata_attach -> rescan_with_cfdata)
++ * or via "drvctl -r -a spi <bus>".
++ */
++static int
++spi_rescan(device_t self, const char *ifattr, const int *ldesc)
++{
++
++	KASSERT(ifattr && !strcmp(ifattr, "spi"));
++
++	config_search(self, NULL,
++	    CFARGS(.search = spi_search));
++	return 0;
++}
++
+ static int
+ spi_open(dev_t dev, int flag, int fmt, lwp_t *l)
+ {
+@@ -426,8 +442,8 @@
+ 	return error;
+ }
+ 
+-CFATTACH_DECL_NEW(spi, sizeof(struct spi_softc),
+-    spi_match, spi_attach, NULL, NULL);
++CFATTACH_DECL2_NEW(spi, sizeof(struct spi_softc),
++    spi_match, spi_attach, NULL, NULL, spi_rescan, NULL);
+ 
+ /*
+  * Configure.  This should be the first thing that the SPI driver

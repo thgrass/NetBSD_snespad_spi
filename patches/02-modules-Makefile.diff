@@ -1,0 +1,10 @@
+--- a/sys/modules/Makefile
++++ b/sys/modules/Makefile
+@@ -179,6 +179,7 @@
+ SUBDIR+=	skipjack
+ SUBDIR+=	slcompress
+ SUBDIR+=	spdmem
++SUBDIR+=	snespad
+ SUBDIR+=	spkr
+ SUBDIR+=	sppp_subr
+ SUBDIR+=	sysmon
