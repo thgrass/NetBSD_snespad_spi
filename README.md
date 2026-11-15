@@ -48,7 +48,7 @@ what the adaptor board does.
 
   * a `wskbd(4)` keyboard per pad, so wscons/X11 applications and
     emulators (e.g. snes9x) see the pads as plain keyboards.
-    Up to **4 pads** (slave 0..3) are supported; by default the module
+    Up to 4 pads (slave 0..3) are supported; by default the module
     config enables 2 (`snespad0`/`snespad1`; `snespad2`/`snespad3` are
     commented out in `src/module/snespad.ioconf` — uncomment for buses
     with more CS lines) and the driver's `SNESPAD_MAX_PORTS` defaults to
