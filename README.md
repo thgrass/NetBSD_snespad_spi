@@ -4,7 +4,9 @@ This is a general spi(4) driver for SNES gamepads.  It attaches
 exclusively via `snespad* at spi? slave N` and uses `spi_configure()` /
 `spi_recv()` only when compiled as built-in.  It compiles on any NetBSD
 architecture (verified as an aarch64 module and as a built-in compile).
-Use it on a machine with a working spi(4) bus.
+Use it on a machine with a working spi(4) bus. Using it as a module that
+loads during runtime needs a patched kernel that enables `spi_reattach()`.
+A patch (patch #3) doing that is provided with this repo.
 
 ## Hardware
 
