@@ -65,7 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD$");
 #define	SPICF_SLAVE	0	/* dev/spi/files.spi: device spi { [slave = -1] } */
 #endif
 
-/* SPI mode 0 (CPOL=0, CPHA=0), MSB first, and speed for the spi(4) attach */
+/* SPI mode 0 (CPOL=0, CPHA=0), MSB first, and speed for the spi attach */
 #define	SNESPAD_SPI_SPEED	500000		/* Hz */
 
 /* poll the pads at ~60 Hz */
@@ -141,7 +141,7 @@ static const uint8_t snespad_keycode[SNESPAD_MAX_PORTS][SNESPAD_NBUTTONS] = {
       0x11,	/* L      -> 'n'		*/
       0x08,	/* X      -> 'e'		*/
       0x06,	/* A      -> 'c'		*/
-      0x10,	/* Right  -> 'm'	*/
+      0x10,	/* Right  -> 'm'		*/
       0x0e,	/* Left   -> 'k'		*/
       0x0d,	/* Down   -> 'j'		*/
       0x0c,	/* Up     -> 'i'		*/
@@ -228,8 +228,26 @@ static const struct wskbd_accessops snespad_accessops = {
 static int
 snespad_match(device_t parent, cfdata_t cf, void *aux)
 {
+	struct spi_attach_args * const sa = aux;
+	uint8_t buf[2];
+	uint16_t raw;
 
-	return 1;
+	if (sa == NULL || sa->sa_handle == NULL)
+
+/*
+ * One-shot presence probe: a pad always shifts out four trailing
+ * 1-bits, so (raw & 0xf) == 0xf means a pad is really there; an
+ * empty socket does not answer that way, and match() must not
+ * attach a ghost device on a rescan.
+ */
+	if (spi_configure(parent, sa->sa_handle, SPI_MODE_0,
+		SNESPAD_SPI_SPEED) != 0)
+			return 0;
+	if (spi_recv(sa->sa_handle, sizeof(buf), buf) != 0)
+			return 0;
+	raw = (uint16_t)((buf[0] << 8) | buf[1]);
+
+	return (raw & 0x000f) == 0x000f;
 }
 
 static void
